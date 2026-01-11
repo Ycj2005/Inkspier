@@ -1,11 +1,21 @@
 import { DBConnection } from "@/app/db/dbConn";
 import Chat from "@/app/db/schemas/chatSchema";
+import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
-
+import jwt from "jsonwebtoken";
 export async function GET(req) {
   try {
     await DBConnection();
-    const userId = req.user.id;
+    const cookieStore = cookies();
+    const tokenObj = cookieStore.get("token");
+
+    if (!tokenObj) {
+      return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+    }
+
+    const decoded = jwt.verify(tokenObj.value, process.env.AUTH_SECRET);
+
+    const userId = decoded.userId;
 
     const chats = await Chat.find({
       participants: userId,
